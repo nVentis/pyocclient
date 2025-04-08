@@ -16,6 +16,7 @@ import os
 import math
 import six
 import hashlib
+from tqdm.auto import tqdm
 from six.moves.urllib import parse
 
 
@@ -629,7 +630,7 @@ class Client(object):
                     return False
         return True
 
-    def _put_file_chunked(self, remote_path, local_source_file, **kwargs):
+    def _put_file_chunked(self, remote_path, local_source_file, show_progress:bool=True, **kwargs):
         """Uploads a file using chunks. If the file is smaller than
         ``chunk_size`` it will be uploaded directly.
 
@@ -671,8 +672,11 @@ class Client(object):
 
         if chunk_count > 1:
             headers['OC-CHUNKED'] = '1'
+        
+        iterator = range(0, int(chunk_count))
+        iterator = tqdm(iterator) if show_progress else iterator
 
-        for chunk_index in range(0, int(chunk_count)):
+        for chunk_index in iterator:
             data = file_handle.read(chunk_size)
             md5suffix = hashlib.md5(data).hexdigest()[:4]
             
