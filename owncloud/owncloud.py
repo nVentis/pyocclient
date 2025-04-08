@@ -15,6 +15,7 @@ import xml.etree.ElementTree as ET
 import os
 import math
 import six
+import hashlib
 from six.moves.urllib import parse
 
 
@@ -673,10 +674,12 @@ class Client(object):
 
         for chunk_index in range(0, int(chunk_count)):
             data = file_handle.read(chunk_size)
+            md5suffix = hashlib.md5(data).hexdigest()[:4]
+            
             if chunk_count > 1:
-                chunk_name = '%s-chunking-%s-%i-%i' % \
+                chunk_name = '%s-chunking-%s-%i-%i-%s' % \
                              (remote_path, transfer_id, chunk_count,
-                              chunk_index)
+                              chunk_index, md5suffix)
             else:
                 chunk_name = remote_path
 
