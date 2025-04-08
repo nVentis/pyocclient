@@ -570,7 +570,8 @@ class Client(object):
         :param chunk_size: (optional) chunk size in bytes, defaults to 10 MB
         :param keep_mtime: (optional) also update the remote file to the same
             mtime as the local one, defaults to True
-        :returns: True if the operation succeeded, False otherwise
+        :returns: a dict with the property success = True if the operation
+            succeeded, False otherwise
         :raises: HTTPResponseError in case an HTTP error status was returned
         """
         if kwargs.get('chunked', True):
@@ -595,8 +596,14 @@ class Client(object):
             data=file_handle,
             headers=headers
         )
+        result = {
+            'transfer_id': None,
+            'success': res,
+            'chunk_size': None,
+            'chunk_count': 1
+        }
         file_handle.close()
-        return res
+        return result
 
     def put_directory(self, target_path, local_directory, **kwargs):
         """Upload a directory with all its contents
@@ -638,12 +645,18 @@ class Client(object):
         also be specified instead by appending a "/"
         :param local_source_file: path to the local file to upload
         :param \*\*kwargs: optional arguments that ``put_file`` accepts
-        :returns: True if the operation succeeded, False otherwise
+        :returns: a dict with the property success = True if the operation
+            succeeded, False otherwise
         :raises: HTTPResponseError in case an HTTP error status was returned
         """
         chunk_size = kwargs.get('chunk_size', 10 * 1024 * 1024)
-        result = True
+        
         transfer_id = int(time.time())
+        result = {
+            'transfer_id': transfer_id,
+            'success': True,
+            'chunk_size': chunk_size
+        }
 
         remote_path = self._normalize_path(remote_path)
         if remote_path.endswith('/'):
@@ -669,6 +682,7 @@ class Client(object):
             )
 
         chunk_count = int(math.ceil(float(size) / float(chunk_size)))
+        result['chunk_count'] = chunk_count
 
         if chunk_count > 1:
             headers['OC-CHUNKED'] = '1'
@@ -693,7 +707,7 @@ class Client(object):
                     data=data,
                     headers=headers
             ):
-                result = False
+                result['success'] = False
                 break
 
         file_handle.close()
